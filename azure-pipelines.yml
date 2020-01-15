@@ -56,6 +56,7 @@ jobs:
   pool:
     name: Azure Pipelines
     vmImage: ubuntu-18.04
+  container: ubuntu:14.04
   timeoutInMinutes: 10
   variables:
     BOOTSTRAP_URL: https://raw.githubusercontent.com/danielga/garrysmod_common/master/build/bootstrap.sh
@@ -66,14 +67,15 @@ jobs:
     PREMAKE5: $(System.DefaultWorkingDirectory)/dependencies/linux/premake-core/premake5
     PROJECT_OS: linux
     PREMAKE5_URL: https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz
-    CC: gcc-8
-    CXX: g++-8
+    CC: gcc-9
+    CXX: g++-9
   steps:
-  - bash: 'curl -s -L "$BOOTSTRAP_URL" | bash'
-    displayName: Bootstrap
   - bash: |
-      sudo apt-get update && sudo apt-get install -y g++-8-multilib
-      $BUILD_SCRIPT
+      sudo apt-get update && sudo apt-get install -y build-essential curl git software-properties-common python-software-properties
+      sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install -y g++-9-multilib
+      curl -s -L "$BOOTSTRAP_URL" | bash
+    displayName: Bootstrap
+  - bash: '$BUILD_SCRIPT'
     displayName: Build
   - task: CopyFiles@2
     displayName: 'Copy files to $(Build.ArtifactStagingDirectory)'
@@ -104,11 +106,11 @@ jobs:
     PROJECT_OS: macosx
     PREMAKE5_URL: https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-macosx.tar.gz
   steps:
-  - bash: 'curl -s -L "$BOOTSTRAP_URL" | bash'
-    displayName: Bootstrap
   - bash: |
       sudo xcode-select -s "/Applications/Xcode_9.4.1.app/Contents/Developer"
-      $BUILD_SCRIPT
+      curl -s -L "$BOOTSTRAP_URL" | bash
+    displayName: Bootstrap
+  - bash: '$BUILD_SCRIPT'
     displayName: Build
   - task: CopyFiles@2
     displayName: 'Copy files to $(Build.ArtifactStagingDirectory)'
