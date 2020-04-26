@@ -279,99 +279,6 @@ namespace netfilter
 		}
 	}
 
-	static void hookhw(const char * &server_name,const char * &map_name, const char* &game_dir, const char* &game_desc, int &num_clients, int &max_players, int &num_fake_clients, const char* &tags)
-	{
-				char hook[] = "A2S_INFO";
-
-		lua->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
-		if (!lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
-		{
-			lua->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
-			lua->Pop(2);
-			return;
-		}
-
-		lua->GetField(-1, "Run");
-		lua->Remove(-2);
-		if (!lua->IsType(-1, GarrysMod::Lua::Type::FUNCTION))
-		{
-			lua->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
-			lua->Pop(2);
-			return;
-		}
-
-		lua->PushString(hook);
-		lua->PushString("127.0.0.1");
-		lua->PushNumber(27015);
-
-		lua->CreateTable();
-
-		lua->PushString(server_name);
-		lua->SetField(-2, "name");
-
-		lua->PushString(map_name);
-		lua->SetField(-2, "map");
-
-		lua->PushString(game_dir);
-		lua->SetField(-2, "folder");
-
-		lua->PushString(game_desc);
-		lua->SetField(-2, "gamemode");
-
-		lua->PushNumber(num_clients);
-		lua->SetField(-2, "players");
-
-		lua->PushNumber(max_players);
-		lua->SetField(-2, "maxplayers");
-
-		lua->PushNumber(num_fake_clients);
-		lua->SetField(-2, "bots");
-
-		lua->PushString(tags);
-		lua->SetField(-2, "tags");
-
-		if (lua->PCall(4, 1, 0) != 0)
-			lua->ErrorNoHalt("\n[%s] %s\n\n", hook, lua->GetString(-1));
-
-
-		 if (lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
-		{
-			lua->GetField(-1, "name");
-			server_name = lua->GetString(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "map");
-			map_name = lua->GetString(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "folder");
-			game_dir = lua->GetString(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "gamemode");
-			game_desc = lua->GetString(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "players");
-			num_clients = lua->GetNumber(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "maxplayers");
-			max_players = lua->GetNumber(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "bots");
-			num_fake_clients = lua->GetNumber(-1);
-			lua->Pop(1);
-
-			lua->GetField(-1, "tags");
-			tags = lua->GetString(-1);
-			lua->Pop(1);
-		}
-
-		lua->Pop(1);
-		return;
-	}
 	static void BuildReplyInfo( )
 	{
 		const char *server_name = global::server->GetName( );
@@ -382,16 +289,16 @@ namespace netfilter
 
 		const char *game_desc = reply_info.game_desc.c_str( );
 
-		int32_t appid = engine_server->GetAppID( );
+		const int32_t appid = engine_server->GetAppID( );
 
-		int num_clients = global::server->GetNumClients( );
+		const int32_t num_clients = global::server->GetNumClients( );
 
-		int max_players =
+		int32_t max_players =
 			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
 		if( max_players <= 0 || max_players > reply_info.max_clients )
 			max_players = reply_info.max_clients;
 
-		int num_fake_clients = global::server->GetNumFakeClients( );
+		const int32_t num_fake_clients = global::server->GetNumFakeClients( );
 
 		const bool has_password = global::server->GetPassword( ) != nullptr;
 
@@ -415,8 +322,6 @@ namespace netfilter
 
 		const bool has_tags = !reply_info.tags.empty( );
 		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
-		
-		hookhw(server_name, map_name, game_dir,game_desc,num_clients,max_players,num_fake_clients,tags);
 
 		info_cache_packet.Reset( );
 
@@ -448,11 +353,79 @@ namespace netfilter
 		info_cache_packet.WriteLongLong( appid );
 	}
 
+void CallInfoHook(const sockaddr_in &from)
+	{
+		char hook[] = "A2S_INFO";
+
+		lua->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
+		{
+			lua->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
+			lua->Pop(2);
+			return;
+		}
+
+		lua->GetField(-1, "Run");
+		lua->Remove(-2);
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::FUNCTION))
+		{
+			lua->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
+			lua->Pop(2);
+			return;
+		}
+
+		lua->PushString(hook);
+		lua->PushString(inet_ntoa(from.sin_addr));
+		lua->PushNumber(27015);
+
+		lua->CreateTable();
+
+		lua->PushString(global::server->GetName( ));
+		lua->SetField(-2, "name");
+
+		lua->PushString(global::server->GetMapName( ));
+		lua->SetField(-2, "map");
+
+		lua->PushString(reply_info.game_dir.c_str());
+		lua->SetField(-2, "folder");
+
+		lua->PushString(reply_info.game_desc.c_str());
+		lua->SetField(-2, "gamemode");
+
+		lua->PushNumber(global::server->GetNumClients( ));
+		lua->SetField(-2, "players");
+		int32_t max_players =
+			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
+		if( max_players <= 0 || max_players > reply_info.max_clients )
+			max_players = reply_info.max_clients;
+
+		lua->PushNumber(max_players);
+		lua->SetField(-2, "maxplayers");
+
+		lua->PushNumber(global::server->GetNumFakeClients( ));
+		lua->SetField(-2, "bots");
+
+		const bool has_tags = !reply_info.tags.empty( );
+		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
+
+		lua->PushString(tags);
+		lua->SetField(-2, "tags");
+
+		if (lua->PCall(4, 1, 0) != 0)
+			lua->ErrorNoHalt("\n[%s] %s\n\n", hook, lua->GetString(-1));
+
+		lua->Pop(1);
+
+	}
 
 
 	inline PacketType SendInfoCache( const sockaddr_in &from, uint32_t time )
 	{
-		BuildReplyInfo();
+		if( time - info_cache_last_update >= info_cache_time )
+		{
+			BuildReplyInfo( );
+			info_cache_last_update = time;
+		}
 
 		sendto(
 			game_socket,
