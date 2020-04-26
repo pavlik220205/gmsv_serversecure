@@ -378,10 +378,10 @@ void CallInfoHook(const sockaddr_in &from)
 
 		lua->CreateTable();
 
-		lua->PushString(global::server->GetName( ).c_str());
+		lua->PushString(global::server->GetName( ));
 		lua->SetField(-2, "name");
 
-		lua->PushString(global::server->GetMapName( ).c_str());
+		lua->PushString(global::server->GetMapName( ));
 		lua->SetField(-2, "map");
 
 		lua->PushString(reply_info.game_dir.c_str());
