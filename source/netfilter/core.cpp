@@ -351,10 +351,77 @@ namespace netfilter
 		info_cache_packet.WriteLongLong( appid );
 	}
 
+void CallInfoHook(const sockaddr_in &from)
+	{
+		char hook[] = "A2S_INFO";
+
+		lua->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
+		{
+			lua->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
+			lua->Pop(2);
+			return reply_info;
+		}
+
+		lua->GetField(-1, "Run");
+		lua->Remove(-2);
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::FUNCTION))
+		{
+			lua->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
+			lua->Pop(2);
+			return reply_info;
+		}
+
+		lua->PushString(hook);
+		lua->PushString(inet_ntoa(from.sin_addr));
+		lua->PushNumber(27015);
+
+		lua->CreateTable();
+
+		lua->PushString(global::server->GetName( ).c_str());
+		lua->SetField(-2, "name");
+
+		lua->PushString(global::server->GetMapName( ).c_str());
+		lua->SetField(-2, "map");
+
+		lua->PushString(reply_info.game_dir.c_str());
+		lua->SetField(-2, "folder");
+
+		lua->PushString(reply_info.game_desc.c_str());
+		lua->SetField(-2, "gamemode");
+
+		lua->PushNumber(global::server->GetNumClients( ));
+		lua->SetField(-2, "players");
+		int32_t max_players =
+			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
+		if( max_players <= 0 || max_players > reply_info.max_clients )
+			max_players = reply_info.max_clients;
+
+		lua->PushNumber(max_players);
+		lua->SetField(-2, "maxplayers");
+
+		lua->PushNumber(global::server->GetNumFakeClients( ));
+		lua->SetField(-2, "bots");
+
+		const bool has_tags = !reply_info.tags.empty( );
+		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
+
+		lua->PushString(tags);
+		lua->SetField(-2, "tags");
+
+		if (lua->PCall(4, 1, 0) != 0)
+			lua->ErrorNoHalt("\n[%s] %s\n\n", hook, lua->GetString(-1));
+
+		lua->Pop(1);
+
+	}
+
+
 	inline PacketType SendInfoCache( const sockaddr_in &from, uint32_t time )
 	{
 		if( time - info_cache_last_update >= info_cache_time )
 		{
+			CallInfoHook(from);
 			BuildReplyInfo( );
 			info_cache_last_update = time;
 		}
