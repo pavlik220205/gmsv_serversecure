@@ -298,7 +298,7 @@ namespace netfilter
 		if( max_players <= 0 || max_players > reply_info.max_clients )
 			max_players = reply_info.max_clients;
 
-		const int num_fake_clients = global::server->GetNumFakeClients( );
+		int num_fake_clients = global::server->GetNumFakeClients( );
 
 		const bool has_password = global::server->GetPassword( ) != nullptr;
 
