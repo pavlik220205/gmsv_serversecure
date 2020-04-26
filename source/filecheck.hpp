@@ -5,6 +5,7 @@ namespace GarrysMod
 	namespace Lua
 	{
 		class ILuaBase;
+		class ILuaInterface;
 	}
 }
 
