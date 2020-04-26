@@ -281,24 +281,24 @@ namespace netfilter
 
 	static void BuildReplyInfo( )
 	{
-		const char *server_name = global::server->GetName( );
+		 char *server_name = global::server->GetName( );
 		
-		const char *map_name = global::server->GetMapName( );
+		 char *map_name = global::server->GetMapName( );
 
-		const char *game_dir = reply_info.game_dir.c_str( );
+		 char *game_dir = reply_info.game_dir.c_str( );
 
-		const char *game_desc = reply_info.game_desc.c_str( );
+		 char *game_desc = reply_info.game_desc.c_str( );
 
-		const int32_t appid = engine_server->GetAppID( );
+		 int32_t appid = engine_server->GetAppID( );
 
-		const int32_t num_clients = global::server->GetNumClients( );
+		 int32_t num_clients = global::server->GetNumClients( );
 
 		int32_t max_players =
 			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
 		if( max_players <= 0 || max_players > reply_info.max_clients )
 			max_players = reply_info.max_clients;
 
-		const int32_t num_fake_clients = global::server->GetNumFakeClients( );
+		 int32_t num_fake_clients = global::server->GetNumFakeClients( );
 
 		const bool has_password = global::server->GetPassword( ) != nullptr;
 
@@ -321,7 +321,7 @@ namespace netfilter
 		const uint64_t steamid = sid != nullptr ? sid->ConvertToUint64( ) : 0;
 
 		const bool has_tags = !reply_info.tags.empty( );
-		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
+		char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
 
 		char hook[] = "A2S_INFO";
 
@@ -453,7 +453,7 @@ namespace netfilter
 
 	inline PacketType SendInfoCache( const sockaddr_in &from, uint32_t time )
 	{
-		BuildReplyInfo(from);
+		BuildReplyInfo();
 
 		sendto(
 			game_socket,
