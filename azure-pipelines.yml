@@ -142,7 +142,7 @@ jobs:
   - task: GitHubRelease@1
     displayName: 'Publish GitHub release $(build.sourceBranchName)'
     inputs:
-      gitHubConnection: 'pavlik220205'
+      gitHubConnection: 'github.com_pavlik220205'
       releaseNotesSource: inline
       assets: '$(System.ArtifactsDirectory)/**'
       addChangeLog: false
