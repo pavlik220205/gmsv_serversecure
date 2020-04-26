@@ -3,6 +3,7 @@
 #include "main.hpp"
 
 #include <GarrysMod/Lua/Interface.h>
+#include <GarrysMod/Lua/LuaInterface.h>
 #include <GarrysMod/FactoryLoader.hpp>
 #include <detouring/hook.hpp>
 #include <cstdint>
@@ -217,6 +218,7 @@ namespace netfilter
 	static IServerGameDLL *gamedll = nullptr;
 	static IVEngineServer *engine_server = nullptr;
 	static IFileSystem *filesystem = nullptr;
+	static GarrysMod::Lua::ILuaInterface *lua = nullptr;
 
 	static void BuildStaticReplyInfo( )
 	{
@@ -355,64 +357,64 @@ void CallInfoHook(const sockaddr_in &from)
 	{
 		char hook[] = "A2S_INFO";
 
-		LUA->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
-		if (!LUA->IsType(-1, GarrysMod::Lua::Type::TABLE))
+		lua->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
 		{
-			LUA->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
-			LUA->Pop(2);
+			lua->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
+			lua->Pop(2);
 			return;
 		}
 
-		LUA->GetField(-1, "Run");
-		LUA->Remove(-2);
-		if (!LUA->IsType(-1, GarrysMod::Lua::Type::FUNCTION))
+		lua->GetField(-1, "Run");
+		lua->Remove(-2);
+		if (!lua->IsType(-1, GarrysMod::Lua::Type::FUNCTION))
 		{
-			LUA->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
-			LUA->Pop(2);
+			lua->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
+			lua->Pop(2);
 			return;
 		}
 
-		LUA->PushString(hook);
-		LUA->PushString(inet_ntoa(from.sin_addr));
-		LUA->PushNumber(27015);
+		lua->PushString(hook);
+		lua->PushString(inet_ntoa(from.sin_addr));
+		lua->PushNumber(27015);
 
-		LUA->CreateTable();
+		lua->CreateTable();
 
-		LUA->PushString(global::server->GetName( ));
-		LUA->SetField(-2, "name");
+		lua->PushString(global::server->GetName( ));
+		lua->SetField(-2, "name");
 
-		LUA->PushString(global::server->GetMapName( ));
-		LUA->SetField(-2, "map");
+		lua->PushString(global::server->GetMapName( ));
+		lua->SetField(-2, "map");
 
-		LUA->PushString(reply_info.game_dir.c_str());
-		LUA->SetField(-2, "folder");
+		lua->PushString(reply_info.game_dir.c_str());
+		lua->SetField(-2, "folder");
 
-		LUA->PushString(reply_info.game_desc.c_str());
-		LUA->SetField(-2, "gamemode");
+		lua->PushString(reply_info.game_desc.c_str());
+		lua->SetField(-2, "gamemode");
 
-		LUA->PushNumber(global::server->GetNumClients( ));
-		LUA->SetField(-2, "players");
+		lua->PushNumber(global::server->GetNumClients( ));
+		lua->SetField(-2, "players");
 		int32_t max_players =
 			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
 		if( max_players <= 0 || max_players > reply_info.max_clients )
 			max_players = reply_info.max_clients;
 
-		LUA->PushNumber(max_players);
-		LUA->SetField(-2, "maxplayers");
+		lua->PushNumber(max_players);
+		lua->SetField(-2, "maxplayers");
 
-		LUA->PushNumber(global::server->GetNumFakeClients( ));
-		LUA->SetField(-2, "bots");
+		lua->PushNumber(global::server->GetNumFakeClients( ));
+		lua->SetField(-2, "bots");
 
 		const bool has_tags = !reply_info.tags.empty( );
 		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
 
-		LUA->PushString(tags);
-		LUA->SetField(-2, "tags");
+		lua->PushString(tags);
+		lua->SetField(-2, "tags");
 
-		if (LUA->PCall(4, 1, 0) != 0)
-			LUA->ErrorNoHalt("\n[%s] %s\n\n", hook, LUA->GetString(-1));
+		if (lua->PCall(4, 1, 0) != 0)
+			lua->ErrorNoHalt("\n[%s] %s\n\n", hook, lua->GetString(-1));
 
-		LUA->Pop(1);
+		lua->Pop(1);
 
 	}
 
@@ -884,6 +886,8 @@ void CallInfoHook(const sockaddr_in &from)
 
 	void Initialize( GarrysMod::Lua::ILuaBase *LUA )
 	{
+		lua = static_cast<GarrysMod::Lua::ILuaInterface *>(LUA);
+		
 		if( !server_loader.IsValid( ) )
 			LUA->ThrowError( "unable to get server factory" );
 
