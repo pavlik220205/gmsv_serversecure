@@ -279,51 +279,9 @@ namespace netfilter
 		}
 	}
 
-	static void BuildReplyInfo( )
+	static void hookhw(const char * &server_name,const char * &map_name, const char* &game_dir, const char* &game_desc, int &num_clients, int &max_players, int &num_fake_clients, const char* &tags)
 	{
-		const char *server_name = global::server->GetName( );
-		
-		const char *map_name = global::server->GetMapName( );
-
-		const char *game_dir = reply_info.game_dir.c_str( );
-
-		const char *game_desc = reply_info.game_desc.c_str( );
-
-		int32_t appid = engine_server->GetAppID( );
-
-		int num_clients = global::server->GetNumClients( );
-
-		int max_players =
-			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
-		if( max_players <= 0 || max_players > reply_info.max_clients )
-			max_players = reply_info.max_clients;
-
-		int num_fake_clients = global::server->GetNumFakeClients( );
-
-		const bool has_password = global::server->GetPassword( ) != nullptr;
-
-		if( !gameserver_context_initialized )
-			gameserver_context_initialized = gameserver_context.Init( );
-
-		bool vac_secure = false;
-		if( gameserver_context_initialized )
-		{
-			ISteamGameServer *steamGS = gameserver_context.SteamGameServer( );
-			if( steamGS != nullptr )
-				vac_secure = steamGS->BSecure( );
-		}
-
-		const char *game_version = reply_info.game_version.c_str( );
-
-		const int32_t udp_port = reply_info.udp_port;
-
-		const CSteamID *sid = engine_server->GetGameServerSteamID( );
-		const uint64_t steamid = sid != nullptr ? sid->ConvertToUint64( ) : 0;
-
-		const bool has_tags = !reply_info.tags.empty( );
-		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
-
-		char hook[] = "A2S_INFO";
+				char hook[] = "A2S_INFO";
 
 		lua->GetField(GarrysMod::Lua::INDEX_GLOBAL, "hook");
 		if (!lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
@@ -412,12 +370,53 @@ namespace netfilter
 		}
 
 		lua->Pop(1);
+		return;
+	}
+	static void BuildReplyInfo( )
+	{
+		const char *server_name = global::server->GetName( );
+		
+		const char *map_name = global::server->GetMapName( );
 
+		const char *game_dir = reply_info.game_dir.c_str( );
 
+		const char *game_desc = reply_info.game_desc.c_str( );
 
+		int32_t appid = engine_server->GetAppID( );
 
+		int num_clients = global::server->GetNumClients( );
 
+		int max_players =
+			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
+		if( max_players <= 0 || max_players > reply_info.max_clients )
+			max_players = reply_info.max_clients;
 
+		int num_fake_clients = global::server->GetNumFakeClients( );
+
+		const bool has_password = global::server->GetPassword( ) != nullptr;
+
+		if( !gameserver_context_initialized )
+			gameserver_context_initialized = gameserver_context.Init( );
+
+		bool vac_secure = false;
+		if( gameserver_context_initialized )
+		{
+			ISteamGameServer *steamGS = gameserver_context.SteamGameServer( );
+			if( steamGS != nullptr )
+				vac_secure = steamGS->BSecure( );
+		}
+
+		const char *game_version = reply_info.game_version.c_str( );
+
+		const int32_t udp_port = reply_info.udp_port;
+
+		const CSteamID *sid = engine_server->GetGameServerSteamID( );
+		const uint64_t steamid = sid != nullptr ? sid->ConvertToUint64( ) : 0;
+
+		const bool has_tags = !reply_info.tags.empty( );
+		const char *tags = has_tags ? reply_info.tags.c_str( ) : nullptr;
+		
+		hookhw(server_name, map_name, game_dir,game_desc,num_clients,max_players,num_fake_clients,tags);
 
 		info_cache_packet.Reset( );
 
