@@ -360,7 +360,7 @@ void CallInfoHook(const sockaddr_in &from)
 		{
 			LUA->ErrorNoHalt("[%s] Global hook is not a table!\n", hook);
 			LUA->Pop(2);
-			return 0;
+			return;
 		}
 
 		LUA->GetField(-1, "Run");
@@ -369,7 +369,7 @@ void CallInfoHook(const sockaddr_in &from)
 		{
 			LUA->ErrorNoHalt("[%s] Global hook.Run is not a function!\n", hook);
 			LUA->Pop(2);
-			return 0;
+			return;
 		}
 
 		LUA->PushString(hook);
