@@ -291,14 +291,14 @@ namespace netfilter
 
 		int32_t appid = engine_server->GetAppID( );
 
-		int32_t num_clients = global::server->GetNumClients( );
+		int num_clients = global::server->GetNumClients( );
 
-		int32_t max_players =
+		int max_players =
 			sv_visiblemaxplayers != nullptr ? sv_visiblemaxplayers->GetInt( ) : -1;
 		if( max_players <= 0 || max_players > reply_info.max_clients )
 			max_players = reply_info.max_clients;
 
-		const int32_t num_fake_clients = global::server->GetNumFakeClients( );
+		const int num_fake_clients = global::server->GetNumFakeClients( );
 
 		const bool has_password = global::server->GetPassword( ) != nullptr;
 
