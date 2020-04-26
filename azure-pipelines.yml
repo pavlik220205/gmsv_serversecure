@@ -18,6 +18,7 @@ trigger:
     - '*'
 jobs:
 - job: windows
+  condition: eq(1,2)
   displayName: Windows
   pool:
     name: Azure Pipelines
